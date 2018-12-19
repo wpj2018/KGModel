@@ -271,11 +271,12 @@ public:
             int o,
             const vector<double>& d_s,
             const vector<double>& d_r,
-            const vector<double>& d_o) {
+            const vector<double>& d_o,
+            int flag) {
 
-        for (unsigned i = 0; i < E[s].size(); i++) E[s][i] -= eta * d_s[i];
-        for (unsigned i = 0; i < R[r].size(); i++) R[r][i] -= eta * d_r[i];
-        for (unsigned i = 0; i < E[o].size(); i++) E[o][i] -= eta * d_o[i];
+        for (unsigned i = 0; i < E[s].size(); i++) E[s][i] -= flag * eta * d_s[i];
+        for (unsigned i = 0; i < R[r].size(); i++) R[r][i] -= flag * eta * d_r[i];
+        for (unsigned i = 0; i < E[o].size(); i++) E[o][i] -= flag * eta * d_o[i];
     }
 
     void train(int s, int r, int o, bool is_positive) {
