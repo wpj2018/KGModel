@@ -169,7 +169,7 @@ public:
 
         double sum1 = -score(s, r, o);
         double sum2 = -score(ss, rr, oo);
-        double margin = 2.0;
+        double margin = 1.0;
         if (sum1+margin > sum2)
         {
             score_grad(s, r, o, d_s, d_r, d_o, d_a);
