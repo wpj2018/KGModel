@@ -1,20 +1,23 @@
 //
-// Created by wpj on 2018/12/19.
+// Created by wpj on 2018/12/21.
 //
-#ifndef TRANSH_MODEL
-#define TRANSH_MODEL
+
+#ifndef TRANSR_MODEL
+#define TRANSR_MODEL
 #include"model.h"
-class TransH: public Model{
+#include<time.h>
+class TransR: public Model{
     int nh;
     vector<vector<double>> A;
+
     vector<vector<double>> A_g;
 public:
-    TransH(int ne, int nr, int nh,  double eta, double gamma) : Model(eta, gamma) {
+    TransR(int ne, int nr, int nh,  double eta, double gamma) : Model(eta, gamma) {
         this->nh = nh;
 
         E = uniform_matrix(ne, nh, -6.0/sqrt(nh), 6.0/sqrt(nh));
         R = uniform_matrix(nr, nh, -6.0/sqrt(nh), 6.0/sqrt(nh));
-        A = uniform_matrix(ne, nh, -6.0/sqrt(nh), 6.0/sqrt(nh));
+        A = uniform_matrix(nh, nh, -6.0/sqrt(nh), 6.0/sqrt(nh));
 
         for(unsigned int i=0;i<E.size();i++){
             l2_normalize(E[i]);
@@ -30,29 +33,16 @@ public:
 
         E_g = const_matrix(ne, nh, init_e);
         R_g = const_matrix(nr, nh, init_e);
-        A_g = const_matrix(nr, nh, init_e);
+        A_g = const_matrix(nh, nh, init_e);
     }
+
     double score(int s, int r, int o) const{
-
-        double tmp1=0,tmp2=0;
-        for (int i=0; i<nh; i++)
-        {
-            tmp1+=A[r][i]*E[s][i];
-            tmp2+=A[r][i]*E[o][i];
-        }
-
-        bool L1 = true;
-        double sum=0;
-        for (int i=0; i<nh; i++) {
-            double diff = fabs(E[s][i] - tmp1 * A[r][i] + R[r][i] - (E[o][i] - tmp2 * A[r][i]));
-            if (L1) {
-                sum += diff;
-            } else {
-                sum += diff * diff;
-            }
-        }
+        vector<double>s_ = matmul(A, E[s]);
+        vector<double>o_ = matmul(A, E[o]);
+        double sum = length(sub(E[s], R[r], E[o]), 2);
         return -sum;
     }
+
     void score_grad(
             int s,
             int r,
@@ -60,27 +50,30 @@ public:
             vector<double>& d_s,
             vector<double>& d_r,
             vector<double>& d_o,
-            vector<double>& d_a) {
+            double* d_a) {
 
-        double tmp1=0,tmp2=0;
-        for (int i=0; i<nh; i++)
-        {
-            tmp1+=A[r][i]*E[s][i];
-            tmp2+=A[r][i]*E[o][i];
-        }
 
-        bool L1 = true;
+        vector<double>s_ = matmul(A, E[s]);
+        vector<double>o_ = matmul(A, E[o]);
+        vector<double>diff = sub(s_, R[r], o_);
 
-        for (int i = 0; i < nh; i++) {
-            double x = 2*(E[s][i] - tmp1 * A[r][i] + R[r][i] - (E[o][i] - tmp2 * A[r][i]));
-            if(L1) {
-                x = x > 0 ? 1:-1;
+
+        for(int j =0; j < nh;j++){
+            double sum = 0;
+            for(int i=0; i < nh; i++){
+                sum += 2 * diff[i] * A[i][j];
             }
-            d_s[i] = x * (1-A[r][i]*E[s][i]);
-            d_r[i] = x;
-            d_o[i] = -x * (1-A[r][i]*E[o][i]);
-            d_a[i] = x * (tmp2-tmp1 + (E[o][i]-E[s][i])*A[r][i]);
+            d_s[j] = sum;
+            d_r[j] = -2 * diff[j];
+            d_o[j] = -sum;
         }
+
+        for(int i=0; i<nh; i++){
+            for(int j = 0; j < nh; j++){
+                d_a[i*nh+j] = 2 * diff[i] * (E[s][j] - E[o][j]);
+            }
+        }
+
     }
 
 
@@ -91,14 +84,18 @@ public:
             const vector<double>& d_s,
             const vector<double>& d_r,
             const vector<double>& d_o,
-            const vector<double>& d_a,
+            double* d_a,
             int flag) {
 
         for (unsigned int i = 0; i < E[s].size(); i++) E[s][i] -= flag * eta * d_s[i];
         for (unsigned int i = 0; i < R[r].size(); i++) R[r][i] -= flag * eta * d_r[i];
         for (unsigned int i = 0; i < E[o].size(); i++) E[o][i] -= flag * eta * d_o[i];
-        for (unsigned int i = 0; i < A[r].size(); i++) A[r][i] -= flag * eta * d_a[i];
 
+        for (int i = 0; i < nh; i++){
+            for(int j = 0; j < nh; j++){
+                A[i][j] -= flag * eta * d_a[i* nh +j];
+            }
+        }
     }
 
     void adagrad_update(
@@ -108,75 +105,62 @@ public:
             const vector<double>& d_s,
             const vector<double>& d_r,
             const vector<double>& d_o,
-            const vector<double>& d_a,
+            const double* d_a,
             int flag) {
 
         for (unsigned int i = 0; i < E[s].size(); i++) E_g[s][i] += d_s[i] * d_s[i];
         for (unsigned int i = 0; i < R[r].size(); i++) R_g[r][i] += d_r[i] * d_r[i];
         for (unsigned int i = 0; i < E[o].size(); i++) E_g[o][i] += d_o[i] * d_o[i];
-        for (unsigned int i = 0; i < A[r].size(); i++) A_g[r][i] += d_a[i] * d_a[i];
+
+        for (int i = 0; i < nh; i++){
+            for(int j = 0; j < nh; j++){
+                A_g[i][j] += d_a[i* nh +j] * d_a[i * nh + j];
+            }
+        }
 
         for (unsigned int i = 0; i < E[s].size(); i++) E[s][i] -= flag * eta * d_s[i] / sqrt(E_g[s][i]);
         for (unsigned int i = 0; i < R[r].size(); i++) R[r][i] -= flag * eta * d_r[i] / sqrt(R_g[r][i]);
         for (unsigned int i = 0; i < E[o].size(); i++) E[o][i] -= flag * eta * d_o[i] / sqrt(E_g[o][i]);
-        for (unsigned int i = 0; i < A[r].size(); i++) A[r][i] -= flag * eta * d_a[i] / sqrt(A_g[r][i]);
-    }
 
-    void othrogonal_update(int r){
-
-        while (true)
-        {
-            l2_normalize(A[r]);
-            double sum=0;
-            for (int i=0; i<nh; i++)
-            {
-                sum+=A[r][i]*R[r][i];
+        for (int  i = 0; i < nh; i++){
+            for(int j = 0; j < nh; j++){
+                A[i][j] -= flag * eta * d_a[i* nh + j] / sqrt(A_g[i][j]);
             }
-            if (sum>0.1)
-            {
-                for (int i=0; i<nh; i++)
-                {
-                    R[r][i] -= eta*A[r][i];
-                    A[r][i] -= eta*R[r][i];
-                }
-            }
-            else
-                break;
         }
-        l2_normalize(A[r]);
     }
+
 
     void train(int s, int r, int o, int ss, int rr, int oo) {
         vector<double> d_s;
         vector<double> d_r;
         vector<double> d_o;
-        vector<double> d_a;
+        double* d_a = new double[nh*nh];//const_matrix(nh, nh, 0);
 
         vector<double> d_ss;
         vector<double> d_rr;
         vector<double> d_oo;
-        vector<double> d_aa;
+        double* d_aa = new double[nh*nh];
 
         d_s.resize(E[s].size());
         d_r.resize(R[r].size());
         d_o.resize(E[o].size());
-        d_a.resize(A[r].size());
 
         d_ss.resize(E[ss].size());
         d_rr.resize(R[rr].size());
         d_oo.resize(E[oo].size());
-        d_aa.resize(A[rr].size());
 
         double sum1 = -score(s, r, o);
         double sum2 = -score(ss, rr, oo);
         double margin = 1.0;
+
         if (sum1+margin > sum2)
         {
+
             score_grad(s, r, o, d_s, d_r, d_o, d_a);
             score_grad(ss, rr, oo, d_ss, d_rr, d_oo, d_aa);
 
-            adagrad_update(s, r, o, d_s, d_r, d_o, d_a, 1);
-            adagrad_update(ss, rr, oo, d_ss, d_rr, d_oo, d_aa, -1);
+            sgd_update(s, r, o, d_s, d_r, d_o, d_a, 1);
+            sgd_update(ss, rr, oo, d_ss, d_rr, d_oo, d_aa, -1);
 
             l2_normalize(E[s]);
             l2_normalize(E[o]);
@@ -187,11 +171,10 @@ public:
             if (oo != o)
                 l2_normalize(E[oo]);
 
-            othrogonal_update(r);
-
-            if (rr != r)
-                othrogonal_update(rr);
         }
+
+        delete []d_a;
+        delete []d_aa;
     }
 
 };

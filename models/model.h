@@ -90,6 +90,7 @@ vector<vector<double>> uniform_matrix(int m, int n, double l, double h) {
     return matrix;
 }
 
+
 vector<vector<double>> const_matrix(int m, int n, double c) {
     vector<vector<double>> matrix;
     matrix.resize(m);
@@ -103,6 +104,83 @@ vector<vector<double>> const_matrix(int m, int n, double c) {
     return matrix;
 }
 
+vector<double>matmul(const vector<vector<double> > &m, const vector<double>& a){
+    int rows = m.size();
+    int cols = m[0].size();
+
+    vector<double>res(rows, 0);
+    for(unsigned int i=0; i < rows; i++){
+        double tmp = 0;
+        int j = 0;
+        for(; j+4 < cols; j+=4){
+             tmp += m[i][j] * a[j] + m[i][j+1] * a[j+1] + m[i][j+2] * a[j+2] + m[i][j+3] * a[j+3];
+        }
+        for(; j < cols; j++){
+            tmp += m[i][j] * a[j];
+        }
+
+        res[i] = tmp;
+    }
+    return res;
+}
+
+vector<vector<double>>T(const vector<vector<double>> &m){
+    int rows = m.size();
+    assert(rows>=1);
+    int cols = m[0].size();
+    vector<vector<double>>res = const_matrix(cols, rows, 0);
+    for(unsigned int i=0;i<res.size();i++){
+        for(unsigned int j=0;j<res[i].size();j++){
+            res[i][j] = m[j][i];
+        }
+    }
+    return res;
+}
+vector<double>matmul(const vector<double>& a, const vector<vector<double> > &m){
+    vector<double>res = matmul(T(m), a);
+    return res;
+}
+
+double matmul(const vector<double>& a, const vector<double> &b){
+    assert(a.size()==b.size());
+    double res = 0;
+    for(unsigned int i=0;i<a.size();i++){
+        res+=a[i]*b[i];
+    }
+    return res;
+}
+double length(const vector<double>&a, int l){
+    double sum = 0;
+    for(unsigned int i=0;i<a.size();i++){
+        if(l==1)sum+=fabs(a[i]);
+        else if(l==2)sum+=a[i]*a[i];
+        else{
+            throw ("not implement");
+        }
+    }
+    return sum;
+}
+vector<double>abs(const vector<double>&a){
+    vector<double>res(a);
+    for(unsigned int i=0;i<a.size();i++){
+        res[i] = fabs(a[i]);
+    }
+    return res;
+}
+
+vector<double>sub(const vector<double>&a, const vector<double>&b){
+    vector<double>res(a.size());
+    for(unsigned int i=0;i<res.size();i++){
+        res[i] = a[i]-b[i];
+    }
+    return res;
+}
+
+vector<double>sub(const vector<double>&a, const vector<double>&b, const vector<double>&c){
+    vector<double>res = sub(sub(a, b),c);
+    return res;
+}
+
 vector<int> range(int n) {  // 0 ... n-1
     vector<int> v;
     v.reserve(n);
@@ -113,10 +191,10 @@ vector<int> range(int n) {  // 0 ... n-1
 
 void l2_normalize(vector<double>& vec) {
     double sq_norm = 0;
-    for (unsigned i = 0; i < vec.size(); i++)
+    for (unsigned int i = 0; i < vec.size(); i++)
         sq_norm += vec[i] * vec[i];
     double norm = sqrt(sq_norm);
-    for (unsigned i = 0; i < vec.size(); i++)
+    for (unsigned int i = 0; i < vec.size(); i++)
         vec[i] /= norm;
 }
 
@@ -219,14 +297,14 @@ public:
     void save(const string& fname) {
         ofstream ofs(fname, ios::out);
 
-        for (unsigned i = 0; i < E.size(); i++) {
-            for (unsigned j = 0; j < E[i].size(); j++)
+        for (unsigned int i = 0; i < E.size(); i++) {
+            for (unsigned int j = 0; j < E[i].size(); j++)
                 ofs << E[i][j] << ' ';
             ofs << endl;
         }
 
-        for (unsigned i = 0; i < R.size(); i++) {
-            for (unsigned j = 0; j < R[i].size(); j++)
+        for (unsigned int i = 0; i < R.size(); i++) {
+            for (unsigned int j = 0; j < R[i].size(); j++)
                 ofs << R[i][j] << ' ';
             ofs << endl;
         }
@@ -237,12 +315,12 @@ public:
     void load(const string& fname) {
         ifstream ifs(fname, ios::in);
 
-        for (unsigned i = 0; i < E.size(); i++)
-            for (unsigned j = 0; j < E[i].size(); j++)
+        for (unsigned int i = 0; i < E.size(); i++)
+            for (unsigned int j = 0; j < E[i].size(); j++)
                 ifs >> E[i][j];
 
-        for (unsigned i = 0; i < R.size(); i++)
-            for (unsigned j = 0; j < R[i].size(); j++)
+        for (unsigned int i = 0; i < R.size(); i++)
+            for (unsigned int j = 0; j < R[i].size(); j++)
                 ifs >> R[i][j];
 
         ifs.close();
@@ -257,13 +335,13 @@ public:
             const vector<double>& d_o,
             int flag) {
 
-        for (unsigned i = 0; i < E[s].size(); i++) E_g[s][i] += d_s[i] * d_s[i];
-        for (unsigned i = 0; i < R[r].size(); i++) R_g[r][i] += d_r[i] * d_r[i];
-        for (unsigned i = 0; i < E[o].size(); i++) E_g[o][i] += d_o[i] * d_o[i];
+        for (unsigned int i = 0; i < E[s].size(); i++) E_g[s][i] += d_s[i] * d_s[i];
+        for (unsigned int i = 0; i < R[r].size(); i++) R_g[r][i] += d_r[i] * d_r[i];
+        for (unsigned int i = 0; i < E[o].size(); i++) E_g[o][i] += d_o[i] * d_o[i];
 
-        for (unsigned i = 0; i < E[s].size(); i++) E[s][i] -= flag * eta * d_s[i] / sqrt(E_g[s][i]);
-        for (unsigned i = 0; i < R[r].size(); i++) R[r][i] -= flag * eta * d_r[i] / sqrt(R_g[r][i]);
-        for (unsigned i = 0; i < E[o].size(); i++) E[o][i] -= flag * eta * d_o[i] / sqrt(E_g[o][i]);
+        for (unsigned int i = 0; i < E[s].size(); i++) E[s][i] -= flag * eta * d_s[i] / sqrt(E_g[s][i]);
+        for (unsigned int i = 0; i < R[r].size(); i++) R[r][i] -= flag * eta * d_r[i] / sqrt(R_g[r][i]);
+        for (unsigned int i = 0; i < E[o].size(); i++) E[o][i] -= flag * eta * d_o[i] / sqrt(E_g[o][i]);
     }
 
     void sgd_update(
@@ -275,9 +353,9 @@ public:
             const vector<double>& d_o,
             int flag) {
 
-        for (unsigned i = 0; i < E[s].size(); i++) E[s][i] -= flag * eta * d_s[i];
-        for (unsigned i = 0; i < R[r].size(); i++) R[r][i] -= flag * eta * d_r[i];
-        for (unsigned i = 0; i < E[o].size(); i++) E[o][i] -= flag * eta * d_o[i];
+        for (unsigned int i = 0; i < E[s].size(); i++) E[s][i] -= flag * eta * d_s[i];
+        for (unsigned int i = 0; i < R[r].size(); i++) R[r][i] -= flag * eta * d_r[i];
+        for (unsigned int i = 0; i < E[o].size(); i++) E[o][i] -= flag * eta * d_o[i];
     }
 
     void train(int s, int r, int o, bool is_positive) {
@@ -294,17 +372,17 @@ public:
 
         score_grad(s, r, o, d_s, d_r, d_o);
 
-        for (unsigned i = 0; i < d_s.size(); i++) d_s[i] *= d_loss;
-        for (unsigned i = 0; i < d_r.size(); i++) d_r[i] *= d_loss;
-        for (unsigned i = 0; i < d_o.size(); i++) d_o[i] *= d_loss;
+        for (unsigned int i = 0; i < d_s.size(); i++) d_s[i] *= d_loss;
+        for (unsigned int i = 0; i < d_r.size(); i++) d_r[i] *= d_loss;
+        for (unsigned int i = 0; i < d_o.size(); i++) d_o[i] *= d_loss;
 
         double gamma_s = gamma / d_s.size();
         double gamma_r = gamma / d_r.size();
         double gamma_o = gamma / d_o.size();
 
-        for (unsigned i = 0; i < d_s.size(); i++) d_s[i] += gamma_s * E[s][i];
-        for (unsigned i = 0; i < d_r.size(); i++) d_r[i] += gamma_r * R[r][i];
-        for (unsigned i = 0; i < d_o.size(); i++) d_o[i] += gamma_o * E[o][i];
+        for (unsigned int i = 0; i < d_s.size(); i++) d_s[i] += gamma_s * E[s][i];
+        for (unsigned int i = 0; i < d_r.size(); i++) d_r[i] += gamma_r * R[r][i];
+        for (unsigned int i = 0; i < d_o.size(); i++) d_o[i] += gamma_o * E[o][i];
 
         adagrad_update(s, r, o, d_s, d_r, d_o, 1);
     }
