@@ -254,15 +254,16 @@ public:
             int o,
             const vector<double>& d_s,
             const vector<double>& d_r,
-            const vector<double>& d_o) {
+            const vector<double>& d_o,
+            int flag) {
 
         for (unsigned i = 0; i < E[s].size(); i++) E_g[s][i] += d_s[i] * d_s[i];
         for (unsigned i = 0; i < R[r].size(); i++) R_g[r][i] += d_r[i] * d_r[i];
         for (unsigned i = 0; i < E[o].size(); i++) E_g[o][i] += d_o[i] * d_o[i];
 
-        for (unsigned i = 0; i < E[s].size(); i++) E[s][i] -= eta * d_s[i] / sqrt(E_g[s][i]);
-        for (unsigned i = 0; i < R[r].size(); i++) R[r][i] -= eta * d_r[i] / sqrt(R_g[r][i]);
-        for (unsigned i = 0; i < E[o].size(); i++) E[o][i] -= eta * d_o[i] / sqrt(E_g[o][i]);
+        for (unsigned i = 0; i < E[s].size(); i++) E[s][i] -= flag * eta * d_s[i] / sqrt(E_g[s][i]);
+        for (unsigned i = 0; i < R[r].size(); i++) R[r][i] -= flag * eta * d_r[i] / sqrt(R_g[r][i]);
+        for (unsigned i = 0; i < E[o].size(); i++) E[o][i] -= flag * eta * d_o[i] / sqrt(E_g[o][i]);
     }
 
     void sgd_update(
@@ -305,7 +306,43 @@ public:
         for (unsigned i = 0; i < d_r.size(); i++) d_r[i] += gamma_r * R[r][i];
         for (unsigned i = 0; i < d_o.size(); i++) d_o[i] += gamma_o * E[o][i];
 
-        adagrad_update(s, r, o, d_s, d_r, d_o);
+        adagrad_update(s, r, o, d_s, d_r, d_o, 1);
+    }
+
+    virtual void train(int s, int r, int o, int ss, int rr, int oo) {
+        vector<double> d_s;
+        vector<double> d_r;
+        vector<double> d_o;
+
+        vector<double> d_ss;
+        vector<double> d_rr;
+        vector<double> d_oo;
+
+        d_s.resize(E[s].size());
+        d_r.resize(R[r].size());
+        d_o.resize(E[o].size());
+
+        d_ss.resize(E[ss].size());
+        d_rr.resize(R[rr].size());
+        d_oo.resize(E[oo].size());
+
+
+        double sum1 = -score(s, r, o);
+        double sum2 = -score(ss, rr, oo);
+        double margin = 1.0;
+        if (sum1+margin > sum2)
+        {
+            score_grad(s, r, o, d_s, d_r, d_o);
+            score_grad(ss, rr, oo, d_ss, d_rr, d_oo);
+
+            adagrad_update(s, r, o, d_s, d_r, d_o, 1);
+            adagrad_update(ss, rr, oo, d_ss, d_rr, d_oo, -1);
+
+            l2_normalize(E[s]);
+            l2_normalize(E[o]);
+            l2_normalize(E[ss]);
+            l2_normalize(E[oo]);
+        }
     }
 
     virtual double score(int s, int r, int o) const = 0;
