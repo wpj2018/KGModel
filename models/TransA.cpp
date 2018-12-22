@@ -45,7 +45,7 @@ public:
     }
 
     double score(int s, int r, int o) const{
-        vector<double>diff = sub(E[o], E[s], R[r]);
+        vector<double>diff = abs(sub(E[o], E[s], R[r]));
         double sum = matmul(diff, matmul(A[r], diff));
         return -sum;
     }
@@ -74,9 +74,10 @@ public:
             d_r[i] = -x * sum;
         }
 
+        diff = abs(diff);
         for(int i = 0; i < nh; i++){
             for(int j = 0; j < nh; j++){
-                d_a[i * nh + j] = fabs(diff[i]) * fabs(diff[j]);
+                d_a[i * nh + j] = diff[i] * diff[j];
             }
         }
     }
@@ -158,16 +159,17 @@ public:
 
         double sum1 = -score(s, r, o);
         double sum2 = -score(ss, rr, oo);
-        double margin = 1.0;
 
+        double margin = 1.0;
         if (sum1+margin > sum2)
         {
 
             score_grad(s, r, o, d_s, d_r, d_o, d_a);
             score_grad(ss, rr, oo, d_ss, d_rr, d_oo, d_aa);
 
-            adagrad_update(s, r, o, d_s, d_r, d_o, d_a, 1);
-            adagrad_update(ss, rr, oo, d_ss, d_rr, d_oo, d_aa, -1);
+            sgd_update(s, r, o, d_s, d_r, d_o, d_a, 1);
+            sgd_update(ss, rr, oo, d_ss, d_rr, d_oo, d_aa, -1);
+
 
             l2_normalize(E[s]);
             l2_normalize(E[o]);
@@ -177,6 +179,7 @@ public:
 
             if (oo != o)
                 l2_normalize(E[oo]);
+
 
         }
 
