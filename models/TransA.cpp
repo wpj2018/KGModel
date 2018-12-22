@@ -6,8 +6,8 @@
 // Created by wpj on 2018/12/21.
 //
 
-#ifndef TRANSR_MODEL
-#define TRANSR_MODEL
+#ifndef TRANSA_MODEL
+#define TRANSA_MODEL
 #include"model.h"
 #include<time.h>
 class TransA: public Model{
