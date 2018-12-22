@@ -109,7 +109,7 @@ vector<double>matmul(const vector<vector<double> > &m, const vector<double>& a){
     int cols = m[0].size();
 
     vector<double>res(rows, 0);
-    for(unsigned int i=0; i < rows; i++){
+    for(int i=0; i < rows; i++){
         double tmp = 0;
         int j = 0;
         for(; j+4 < cols; j+=4){
