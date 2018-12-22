@@ -287,8 +287,11 @@ protected:
 
     vector<vector<double>> E;
     vector<vector<double>> R;
+    vector<vector<vector<double>>>A;
+
     vector<vector<double>> E_g;
     vector<vector<double>> R_g;
+    vector<vector<double>> A_g;
 
 public:
 
@@ -311,7 +314,15 @@ public:
                 ofs << R[i][j] << ' ';
             ofs << endl;
         }
-
+        for (unsigned int i = 0; i < A.size(); i++) {
+            for (unsigned int j = 0; j < A[i].size(); j++){
+                for (unsigned int k = 0; k < A[i][j].size(); k++) {
+                    ofs << A[i][j][k] << ' ';
+                }
+                ofs << endl;
+            }
+            ofs << endl;
+        }
         ofs.close();
     }
 
@@ -325,6 +336,11 @@ public:
         for (unsigned int i = 0; i < R.size(); i++)
             for (unsigned int j = 0; j < R[i].size(); j++)
                 ifs >> R[i][j];
+
+        for (unsigned int i = 0; i < A.size(); i++)
+            for (unsigned int j = 0; j < A[i].size(); j++)
+                for (unsigned int k = 0; k < A[i][j].size(); k++)
+                    ifs >> A[i][j][k];
 
         ifs.close();
     }

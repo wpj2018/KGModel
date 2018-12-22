@@ -12,9 +12,6 @@
 #include<time.h>
 class TransA: public Model{
     int nh;
-    vector<vector<vector<double>>>A;
-
-    vector<vector<double>> A_g;
 public:
     TransA(int ne, int nr, int nh,  double eta, double gamma) : Model(eta, gamma) {
         this->nh = nh;

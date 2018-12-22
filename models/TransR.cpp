@@ -8,9 +8,6 @@
 #include<time.h>
 class TransR: public Model{
     int nh;
-    vector<vector<vector<double>>>A;
-
-    vector<vector<double>> A_g;
 public:
     TransR(int ne, int nr, int nh,  double eta, double gamma) : Model(eta, gamma) {
         this->nh = nh;
