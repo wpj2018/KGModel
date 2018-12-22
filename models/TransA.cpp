@@ -1,4 +1,8 @@
 //
+// Created by wpj on 2018/12/22.
+//
+
+//
 // Created by wpj on 2018/12/21.
 //
 
@@ -6,13 +10,13 @@
 #define TRANSR_MODEL
 #include"model.h"
 #include<time.h>
-class TransR: public Model{
+class TransA: public Model{
     int nh;
     vector<vector<vector<double>>>A;
 
     vector<vector<double>> A_g;
 public:
-    TransR(int ne, int nr, int nh,  double eta, double gamma) : Model(eta, gamma) {
+    TransA(int ne, int nr, int nh,  double eta, double gamma) : Model(eta, gamma) {
         this->nh = nh;
 
         E = uniform_matrix(ne, nh, -6.0/sqrt(nh), 6.0/sqrt(nh));
@@ -41,9 +45,8 @@ public:
     }
 
     double score(int s, int r, int o) const{
-        vector<double>s_ = matmul(A[r], E[s]);
-        vector<double>o_ = matmul(A[r], E[o]);
-        double sum = length(sub(o_, s_, R[r]), 2);
+        vector<double>diff = sub(E[o], E[s], R[r]);
+        double sum = matmul(diff, matmul(A[r], diff));
         return -sum;
     }
 
@@ -57,27 +60,25 @@ public:
             double* d_a) {
 
 
-        vector<double>s_ = matmul(A[r], E[s]);
-        vector<double>o_ = matmul(A[r], E[o]);
-        vector<double>diff = sub(o_, s_, R[r]);
+        vector<double>diff = sub(E[o], E[s], R[r]);
 
-
-        for(int j =0; j < nh;j++){
+        for(int i = 0; i < nh; i++){
             double sum = 0;
-            for(int i=0; i < nh; i++){
-                sum += 2 * diff[i] * A[r][i][j];
-            }
-            d_s[j] = -sum;
-            d_r[j] = -diff[j];
-            d_o[j] = sum;
-        }
-
-        for(int i=0; i<nh; i++){
             for(int j = 0; j < nh; j++){
-                d_a[i*nh+j] = 2 * diff[i] * (E[o][j] - E[s][j]);
+                sum += 2 * A[r][i][j] * diff[j];
             }
+            double x = diff[i] > 0 ? 1: -1;
+
+            d_o[i] = x * sum;
+            d_s[i] = -x * sum;
+            d_r[i] = -x * sum;
         }
 
+        for(int i = 0; i < nh; i++){
+            for(int j = 0; j < nh; j++){
+                d_a[i * nh + j] = fabs(diff[i]) * fabs(diff[j]);
+            }
+        }
     }
 
 
@@ -98,6 +99,7 @@ public:
         for (int i = 0; i < nh; i++){
             for(int j = 0; j < nh; j++){
                 A[r][i][j] -= flag * eta * d_a[i* nh +j];
+                if(A[r][i][j] < 0) A[r][i][j] = 0;
             }
         }
     }
@@ -129,6 +131,7 @@ public:
         for (int  i = 0; i < nh; i++){
             for(int j = 0; j < nh; j++){
                 A[r][i][j] -= flag * eta * d_a[i* nh + j] / sqrt(A_g[i][j]);
+                if(A[r][i][j] < 0) A[r][i][j] = 0;
             }
         }
     }
