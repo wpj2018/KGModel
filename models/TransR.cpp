@@ -8,7 +8,7 @@
 #include<time.h>
 class TransR: public Model{
     int nh;
-    vector<vector<double>> A;
+    vector<vector<vector<double>>>A;
 
     vector<vector<double>> A_g;
 public:
@@ -17,7 +17,6 @@ public:
 
         E = uniform_matrix(ne, nh, -6.0/sqrt(nh), 6.0/sqrt(nh));
         R = uniform_matrix(nr, nh, -6.0/sqrt(nh), 6.0/sqrt(nh));
-        A = uniform_matrix(nh, nh, -6.0/sqrt(nh), 6.0/sqrt(nh));
 
         for(unsigned int i=0;i<E.size();i++){
             l2_normalize(E[i]);
@@ -27,8 +26,13 @@ public:
             l2_normalize(R[i]);
         }
 
+        A.resize(nr);
         for(unsigned int i=0;i<A.size();i++){
-            l2_normalize(A[i]);
+            vector<vector<double>> tmp = const_matrix(nh, nh, 0);
+            for(unsigned int j=0; j < tmp.size(); j++){
+                tmp[j][j] = 1;
+            }
+            A[i] = tmp;
         }
 
         E_g = const_matrix(ne, nh, init_e);
@@ -37,9 +41,9 @@ public:
     }
 
     double score(int s, int r, int o) const{
-        vector<double>s_ = matmul(A, E[s]);
-        vector<double>o_ = matmul(A, E[o]);
-        double sum = length(sub(E[s], R[r], E[o]), 2);
+        vector<double>s_ = matmul(A[r], E[s]);
+        vector<double>o_ = matmul(A[r], E[o]);
+        double sum = length(sub(o_, s_, R[r]), 2);
         return -sum;
     }
 
@@ -53,24 +57,24 @@ public:
             double* d_a) {
 
 
-        vector<double>s_ = matmul(A, E[s]);
-        vector<double>o_ = matmul(A, E[o]);
-        vector<double>diff = sub(s_, R[r], o_);
+        vector<double>s_ = matmul(A[r], E[s]);
+        vector<double>o_ = matmul(A[r], E[o]);
+        vector<double>diff = sub(o_, s_, R[r]);
 
 
         for(int j =0; j < nh;j++){
             double sum = 0;
             for(int i=0; i < nh; i++){
-                sum += 2 * diff[i] * A[i][j];
+                sum += 2 * diff[i] * A[r][i][j];
             }
-            d_s[j] = sum;
-            d_r[j] = -2 * diff[j];
-            d_o[j] = -sum;
+            d_s[j] = -sum;
+            d_r[j] = -diff[j];
+            d_o[j] = sum;
         }
 
         for(int i=0; i<nh; i++){
             for(int j = 0; j < nh; j++){
-                d_a[i*nh+j] = 2 * diff[i] * (E[s][j] - E[o][j]);
+                d_a[i*nh+j] = 2 * diff[i] * (E[o][j] - E[s][j]);
             }
         }
 
@@ -93,7 +97,7 @@ public:
 
         for (int i = 0; i < nh; i++){
             for(int j = 0; j < nh; j++){
-                A[i][j] -= flag * eta * d_a[i* nh +j];
+                A[r][i][j] -= flag * eta * d_a[i* nh +j];
             }
         }
     }
@@ -124,7 +128,7 @@ public:
 
         for (int  i = 0; i < nh; i++){
             for(int j = 0; j < nh; j++){
-                A[i][j] -= flag * eta * d_a[i* nh + j] / sqrt(A_g[i][j]);
+                A[r][i][j] -= flag * eta * d_a[i* nh + j] / sqrt(A_g[i][j]);
             }
         }
     }

@@ -177,7 +177,10 @@ vector<double>sub(const vector<double>&a, const vector<double>&b){
 }
 
 vector<double>sub(const vector<double>&a, const vector<double>&b, const vector<double>&c){
-    vector<double>res = sub(sub(a, b),c);
+    vector<double>res(a.size());
+    for(unsigned int i=0;i<res.size();i++){
+        res[i] = a[i]-b[i]-c[i];
+    }
     return res;
 }
 
