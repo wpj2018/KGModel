@@ -11,7 +11,6 @@
 #include"model.h"
 #include<time.h>
 class TransA: public Model{
-    int nh;
 public:
     TransA(int ne, int nr, int nh,  double eta, double gamma) : Model(eta, gamma) {
         this->nh = nh;
@@ -90,9 +89,12 @@ public:
             double* d_a,
             int flag) {
 
-        for (unsigned int i = 0; i < E[s].size(); i++) E[s][i] -= flag * eta * d_s[i];
-        for (unsigned int i = 0; i < R[r].size(); i++) R[r][i] -= flag * eta * d_r[i];
-        for (unsigned int i = 0; i < E[o].size(); i++) E[o][i] -= flag * eta * d_o[i];
+        for (int i = 0; i < nh; i++) {
+            R[r][i] -=  eta * R[r][i];
+            E[s][i] -=  eta * E[s][i];
+            E[o][i] -=  eta * E[o][i];
+        }
+        Model::sgd_update(s, r, o, d_s, d_r, d_o, flag);
 
         for (int i = 0; i < nh; i++){
             for(int j = 0; j < nh; j++){
@@ -100,6 +102,7 @@ public:
                 if(A[r][i][j] < 0) A[r][i][j] = 0;
             }
         }
+
     }
 
     void adagrad_update(
@@ -112,19 +115,13 @@ public:
             const double* d_a,
             int flag) {
 
-        for (unsigned int i = 0; i < E[s].size(); i++) E_g[s][i] += d_s[i] * d_s[i];
-        for (unsigned int i = 0; i < R[r].size(); i++) R_g[r][i] += d_r[i] * d_r[i];
-        for (unsigned int i = 0; i < E[o].size(); i++) E_g[o][i] += d_o[i] * d_o[i];
+        Model::adagrad_update(s, r, o, d_s, d_r, d_o, flag);
 
         for (int i = 0; i < nh; i++){
             for(int j = 0; j < nh; j++){
                 A_g[i][j] += d_a[i* nh +j] * d_a[i * nh + j];
             }
         }
-
-        for (unsigned int i = 0; i < E[s].size(); i++) E[s][i] -= flag * eta * d_s[i] / sqrt(E_g[s][i]);
-        for (unsigned int i = 0; i < R[r].size(); i++) R[r][i] -= flag * eta * d_r[i] / sqrt(R_g[r][i]);
-        for (unsigned int i = 0; i < E[o].size(); i++) E[o][i] -= flag * eta * d_o[i] / sqrt(E_g[o][i]);
 
         for (int  i = 0; i < nh; i++){
             for(int j = 0; j < nh; j++){
@@ -167,15 +164,11 @@ public:
             sgd_update(s, r, o, d_s, d_r, d_o, d_a, 1);
             sgd_update(ss, rr, oo, d_ss, d_rr, d_oo, d_aa, -1);
 
+            //l2_normalize(E[s]);
+            //l2_normalize(E[o]);
 
-            l2_normalize(E[s]);
-            l2_normalize(E[o]);
-
-            if (ss != s)
-                l2_normalize(E[ss]);
-
-            if (oo != o)
-                l2_normalize(E[oo]);
+            //if(s!=ss)l2_normalize(E[ss]);
+            //if(o!=oo)l2_normalize(E[oo]);
 
 
         }

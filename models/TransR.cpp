@@ -7,7 +7,6 @@
 #include"model.h"
 #include<time.h>
 class TransR: public Model{
-    int nh;
 public:
     TransR(int ne, int nr, int nh,  double eta, double gamma) : Model(eta, gamma) {
         this->nh = nh;
@@ -88,9 +87,7 @@ public:
             double* d_a,
             int flag) {
 
-        for (unsigned int i = 0; i < E[s].size(); i++) E[s][i] -= flag * eta * d_s[i];
-        for (unsigned int i = 0; i < R[r].size(); i++) R[r][i] -= flag * eta * d_r[i];
-        for (unsigned int i = 0; i < E[o].size(); i++) E[o][i] -= flag * eta * d_o[i];
+        Model::sgd_update(s, r, o, d_s, d_r, d_o, flag);
 
         for (int i = 0; i < nh; i++){
             for(int j = 0; j < nh; j++){
@@ -109,19 +106,14 @@ public:
             const double* d_a,
             int flag) {
 
-        for (unsigned int i = 0; i < E[s].size(); i++) E_g[s][i] += d_s[i] * d_s[i];
-        for (unsigned int i = 0; i < R[r].size(); i++) R_g[r][i] += d_r[i] * d_r[i];
-        for (unsigned int i = 0; i < E[o].size(); i++) E_g[o][i] += d_o[i] * d_o[i];
+
+        Model::adagrad_update(s, r, o, d_s, d_r, d_o, flag);
 
         for (int i = 0; i < nh; i++){
             for(int j = 0; j < nh; j++){
                 A_g[i][j] += d_a[i* nh +j] * d_a[i * nh + j];
             }
         }
-
-        for (unsigned int i = 0; i < E[s].size(); i++) E[s][i] -= flag * eta * d_s[i] / sqrt(E_g[s][i]);
-        for (unsigned int i = 0; i < R[r].size(); i++) R[r][i] -= flag * eta * d_r[i] / sqrt(R_g[r][i]);
-        for (unsigned int i = 0; i < E[o].size(); i++) E[o][i] -= flag * eta * d_o[i] / sqrt(E_g[o][i]);
 
         for (int  i = 0; i < nh; i++){
             for(int j = 0; j < nh; j++){

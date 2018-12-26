@@ -197,6 +197,7 @@ void l2_normalize(vector<double>& vec) {
     for (unsigned int i = 0; i < vec.size(); i++)
         sq_norm += vec[i] * vec[i];
     double norm = sqrt(sq_norm);
+
     for (unsigned int i = 0; i < vec.size(); i++)
         vec[i] /= norm;
 }
@@ -280,6 +281,7 @@ public:
 class Model {
 
 protected:
+    int nh;
     double eta;
     double gamma;
     const double init_b = 1e-2;
@@ -304,22 +306,27 @@ public:
         ofstream ofs(fname, ios::out);
 
         for (unsigned int i = 0; i < E.size(); i++) {
-            for (unsigned int j = 0; j < E[i].size(); j++)
-                ofs << E[i][j] << ' ';
+            for (unsigned int j = 0; j < E[i].size(); j++) {
+                if(j==0)ofs<<E[i][j];
+                else ofs <<" "<<E[i][j];
+            }
             ofs << endl;
         }
 
         for (unsigned int i = 0; i < R.size(); i++) {
-            for (unsigned int j = 0; j < R[i].size(); j++)
-                ofs << R[i][j] << ' ';
+            for (unsigned int j = 0; j < R[i].size(); j++) {
+                if(j==0)ofs<<R[i][0];
+                else ofs <<" "<<R[i][j];
+            }
             ofs << endl;
         }
+
         for (unsigned int i = 0; i < A.size(); i++) {
             for (unsigned int j = 0; j < A[i].size(); j++){
                 for (unsigned int k = 0; k < A[i][j].size(); k++) {
-                    ofs << A[i][j][k] << ' ';
+                    if(j+k==0) ofs<<A[i][j][k];
+                    else ofs <<" "<<A[i][j][k];
                 }
-                ofs << endl;
             }
             ofs << endl;
         }
@@ -354,13 +361,16 @@ public:
             const vector<double>& d_o,
             int flag) {
 
-        for (unsigned int i = 0; i < E[s].size(); i++) E_g[s][i] += d_s[i] * d_s[i];
-        for (unsigned int i = 0; i < R[r].size(); i++) R_g[r][i] += d_r[i] * d_r[i];
-        for (unsigned int i = 0; i < E[o].size(); i++) E_g[o][i] += d_o[i] * d_o[i];
+        for (int i = 0; i < nh; i++){
+            E_g[s][i] += d_s[i] * d_s[i];
+            R_g[r][i] += d_r[i] * d_r[i];
+            E_g[o][i] += d_o[i] * d_o[i];
 
-        for (unsigned int i = 0; i < E[s].size(); i++) E[s][i] -= flag * eta * d_s[i] / sqrt(E_g[s][i]);
-        for (unsigned int i = 0; i < R[r].size(); i++) R[r][i] -= flag * eta * d_r[i] / sqrt(R_g[r][i]);
-        for (unsigned int i = 0; i < E[o].size(); i++) E[o][i] -= flag * eta * d_o[i] / sqrt(E_g[o][i]);
+            E[s][i] -= flag * eta * d_s[i] / sqrt(E_g[s][i]);
+            R[r][i] -= flag * eta * d_r[i] / sqrt(R_g[r][i]);
+            E[o][i] -= flag * eta * d_o[i] / sqrt(E_g[o][i]);
+        }
+
     }
 
     void sgd_update(
@@ -372,9 +382,11 @@ public:
             const vector<double>& d_o,
             int flag) {
 
-        for (unsigned int i = 0; i < E[s].size(); i++) E[s][i] -= flag * eta * d_s[i];
-        for (unsigned int i = 0; i < R[r].size(); i++) R[r][i] -= flag * eta * d_r[i];
-        for (unsigned int i = 0; i < E[o].size(); i++) E[o][i] -= flag * eta * d_o[i];
+        for (int i = 0; i < nh; i++){
+            E[s][i] -= flag * eta * d_s[i];
+            R[r][i] -= flag * eta * d_r[i];
+            E[o][i] -= flag * eta * d_o[i];
+        }
     }
 
     void train(int s, int r, int o, bool is_positive) {

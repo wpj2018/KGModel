@@ -5,7 +5,6 @@
 #define TRANSE_MODEL
 #include"model.h"
 class TransE: public Model{
-    int nh;
 public:
     TransE(int ne, int nr, int nh,  double eta, double gamma) : Model(eta, gamma) {
         this->nh = nh;
