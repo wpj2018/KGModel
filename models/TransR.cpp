@@ -33,7 +33,11 @@ public:
 
         E_g = const_matrix(ne, nh, init_e);
         R_g = const_matrix(nr, nh, init_e);
-        A_g = const_matrix(nh, nh, init_e);
+        A_g.resize(nr);
+        for(unsigned int i=0;i<A.size();i++){
+            vector<vector<double>> tmp = const_matrix(nh, nh, init_e);
+            A_g[i] = tmp;
+        }
     }
 
     double score(int s, int r, int o) const{
@@ -111,13 +115,13 @@ public:
 
         for (int i = 0; i < nh; i++){
             for(int j = 0; j < nh; j++){
-                A_g[i][j] += d_a[i* nh +j] * d_a[i * nh + j];
+                A_g[r][i][j] += d_a[i* nh +j] * d_a[i * nh + j];
             }
         }
 
         for (int  i = 0; i < nh; i++){
             for(int j = 0; j < nh; j++){
-                A[r][i][j] -= flag * eta * d_a[i* nh + j] / sqrt(A_g[i][j]);
+                A[r][i][j] -= flag * eta * d_a[i* nh + j] / sqrt(A_g[r][i][j]);
             }
         }
     }

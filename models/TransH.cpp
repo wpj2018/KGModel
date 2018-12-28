@@ -28,7 +28,8 @@ public:
 
         E_g = const_matrix(ne, nh, init_e);
         R_g = const_matrix(nr, nh, init_e);
-        A_g = const_matrix(nr, nh, init_e);
+        A_g.resize(1);
+        A_g[0] = const_matrix(nr, nh, init_e);
     }
     double score(int s, int r, int o) const{
 
@@ -111,8 +112,8 @@ public:
         Model::adagrad_update(s, r, o, d_s, d_r, d_o, flag);
 
         for (int i = 0; i < nh; i++){
-            A_g[r][i] += d_a[i] * d_a[i];
-            A[0][r][i] -= flag * eta * d_a[i] / sqrt(A_g[r][i]);
+            A_g[0][r][i] += d_a[i] * d_a[i];
+            A[0][r][i] -= flag * eta * d_a[i] / sqrt(A_g[0][r][i]);
         }
     }
 

@@ -177,7 +177,7 @@ vector<double>sub(const vector<double>&a, const vector<double>&b){
 }
 
 vector<double>sub(const vector<double>&a, const vector<double>&b, const vector<double>&c){
-    vector<double>res(a.size());
+    vector<double>res(a.size(), 0);
     for(unsigned int i=0;i<res.size();i++){
         res[i] = a[i]-b[i]-c[i];
     }
@@ -200,6 +200,25 @@ void l2_normalize(vector<double>& vec) {
 
     for (unsigned int i = 0; i < vec.size(); i++)
         vec[i] /= norm;
+}
+
+void l2_normalize(vector<vector<double>>& vec) {
+    int size0 = vec.size();
+    int size1 = vec[0].size();
+    double sq_norm = 0;
+    for (int i = 0; i < size0; i++){
+        for(int j=0; j < size1; j++) {
+            sq_norm += vec[i][j] * vec[i][j];
+        }
+    }
+
+    double norm = sqrt(sq_norm);
+
+    for (int i = 0; i < size0; i++){
+        for(int j=0; j < size1; j++){
+            vec[i][j]/=norm;
+        }
+    }
 }
 
 double sigmoid(double x, double cutoff=30) {
@@ -293,7 +312,7 @@ protected:
 
     vector<vector<double>> E_g;
     vector<vector<double>> R_g;
-    vector<vector<double>> A_g;
+    vector<vector<vector<double>>> A_g;
 
 public:
 

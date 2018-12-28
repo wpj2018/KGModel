@@ -37,13 +37,18 @@ public:
 
         E_g = const_matrix(ne, nh, init_e);
         R_g = const_matrix(nr, nh, init_e);
-        A_g = const_matrix(nh, nh, init_e);
+        A_g.resize(nr);
+        for(unsigned int i=0;i<A.size();i++){
+            vector<vector<double>> tmp = const_matrix(nh, nh, init_e);
+            A_g[i] = tmp;
+        }
     }
 
     double score(int s, int r, int o) const{
         vector<double>diff = abs(sub(E[o], E[s], R[r]));
         double sum = matmul(diff, matmul(A[r], diff));
         return -sum;
+
     }
 
     void score_grad(
@@ -55,14 +60,15 @@ public:
             vector<double>& d_o,
             double* d_a) {
 
-
         vector<double>diff = sub(E[o], E[s], R[r]);
 
         for(int i = 0; i < nh; i++){
-            double sum = 0;
+            double sum = 0.0;
+
             for(int j = 0; j < nh; j++){
-                sum += 2 * A[r][i][j] * diff[j];
+                sum += 2 * A[r][i][j] * fabs(diff[j]);
             }
+
             double x = diff[i] > 0 ? 1: -1;
 
             d_o[i] = x * sum;
@@ -89,13 +95,8 @@ public:
             double* d_a,
             int flag) {
 
-        for (int i = 0; i < nh; i++) {
-            R[r][i] -=  eta * R[r][i];
-            E[s][i] -=  eta * E[s][i];
-            E[o][i] -=  eta * E[o][i];
-        }
         Model::sgd_update(s, r, o, d_s, d_r, d_o, flag);
-
+	
         for (int i = 0; i < nh; i++){
             for(int j = 0; j < nh; j++){
                 A[r][i][j] -= flag * eta * d_a[i* nh +j];
@@ -116,16 +117,16 @@ public:
             int flag) {
 
         Model::adagrad_update(s, r, o, d_s, d_r, d_o, flag);
-
+        
         for (int i = 0; i < nh; i++){
             for(int j = 0; j < nh; j++){
-                A_g[i][j] += d_a[i* nh +j] * d_a[i * nh + j];
+                A_g[r][i][j] += d_a[i* nh +j] * d_a[i * nh + j];
             }
         }
 
         for (int  i = 0; i < nh; i++){
             for(int j = 0; j < nh; j++){
-                A[r][i][j] -= flag * eta * d_a[i* nh + j] / sqrt(A_g[i][j]);
+                A[r][i][j] -= flag * eta * d_a[i* nh + j] / sqrt(A_g[r][i][j]);
                 if(A[r][i][j] < 0) A[r][i][j] = 0;
             }
         }
@@ -161,16 +162,14 @@ public:
             score_grad(s, r, o, d_s, d_r, d_o, d_a);
             score_grad(ss, rr, oo, d_ss, d_rr, d_oo, d_aa);
 
-            sgd_update(s, r, o, d_s, d_r, d_o, d_a, 1);
-            sgd_update(ss, rr, oo, d_ss, d_rr, d_oo, d_aa, -1);
+            adagrad_update(s, r, o, d_s, d_r, d_o, d_a, 1);
+            adagrad_update(ss, rr, oo, d_ss, d_rr, d_oo, d_aa, -1);
 
-            //l2_normalize(E[s]);
-            //l2_normalize(E[o]);
+            l2_normalize(E[s]);
+            l2_normalize(E[o]);
 
-            //if(s!=ss)l2_normalize(E[ss]);
-            //if(o!=oo)l2_normalize(E[oo]);
-
-
+            if(s!=ss)l2_normalize(E[ss]);
+            if(o!=oo)l2_normalize(E[oo]);
         }
 
         delete []d_a;
