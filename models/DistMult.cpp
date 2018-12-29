@@ -5,8 +5,6 @@
 #include"model.h"
 
 class DistMult : public Model {
-    int nh;
-
 public:
     DistMult(int ne, int nr, int nh, double eta, double gamma) : Model(eta, gamma) {
         this->nh = nh;

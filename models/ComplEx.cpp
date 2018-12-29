@@ -5,8 +5,6 @@
 #define COMPLEX_MODEL
 #include"model.h"
 class ComplEx : public Model {
-    int nh;
-
 public:
     ComplEx(int ne, int nr, int nh, double eta, double gamma) : Model(eta, gamma) {
         assert( nh % 2 == 0 );

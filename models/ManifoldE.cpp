@@ -24,7 +24,7 @@ public:
     double score(int s, int r, int o) const {
         double dot = 0;
         for (int i = 0; i < nh; i++)
-            dot += fabs(E[s][i] + R[r][i] - E[o][i]);
+            dot += E[s][i] * R[r][i] * E[o][i];
         return -fabs(dot-A[0][0][r] * A[0][0][r]);
     }
 
@@ -39,17 +39,15 @@ public:
 
         double sum = 0;
         for (int i = 0; i < nh; i++)
-            sum += fabs(E[s][i] + R[r][i] - E[o][i]);
+            sum += E[s][i] * R[r][i] * E[o][i];
 
         double loss = 2* (sum-A[0][0][r]*A[0][0][r]);
         loss = loss > 0 ? 1 : -1;
 
         for (int i = 0; i < nh; i++) {
-            double x = 2*(E[s][i] + R[r][i] - E[o][i]);
-            x = x > 0 ? 1:-1;
-            d_s[i] = loss * x;
-            d_r[i] = loss * x;
-            d_o[i] = -loss* x;
+            d_s[i] = loss * R[r][i] * E[o][i];
+            d_r[i] = loss * E[s][i] * E[o][i];
+            d_o[i] = loss * E[s][i] * R[r][i];
         }
         d_a = -loss * 2 * A[0][0][r];
     }
