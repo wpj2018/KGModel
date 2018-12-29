@@ -25,7 +25,7 @@ public:
         double dot = 0;
         for (int i = 0; i < nh; i++)
             dot += fabs(E[s][i] + R[r][i] - E[o][i]);
-        return -(dot-A[0][0][r] * A[0][0][r]);
+        return -fabs(dot-A[0][0][r] * A[0][0][r]);
     }
 
     void score_grad(
@@ -41,7 +41,7 @@ public:
         for (int i = 0; i < nh; i++)
             sum += fabs(E[s][i] + R[r][i] - E[o][i]);
 
-        double loss = sum-A[0][0][r]*A[0][0][r];
+        double loss = 2* (sum-A[0][0][r]*A[0][0][r]);
         loss = loss > 0 ? 1 : -1;
 
         for (int i = 0; i < nh; i++) {
