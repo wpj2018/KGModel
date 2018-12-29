@@ -468,8 +468,11 @@ public:
 
             l2_normalize(E[s]);
             l2_normalize(E[o]);
-            l2_normalize(E[ss]);
-            l2_normalize(E[oo]);
+
+            if (ss != s)
+                l2_normalize(E[ss]);
+            if (oo != o)
+                l2_normalize(E[oo]);
         }
     }
 
