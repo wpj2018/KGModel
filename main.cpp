@@ -2,6 +2,10 @@
 #include"models/TransE.cpp"
 #include"models/Analogy.cpp"
 #include"models/ComplEx.cpp"
+#include"models/TransA.cpp"
+#include"models/TransH.cpp"
+#include"models/TransR.cpp"
+#include"models/ManifoldE.cpp"
 
 // based on Google's word2vec
 int ArgPos(char *str, int argc, char **argv) {
@@ -30,7 +34,7 @@ int main(int argc, char **argv) {
     string  model_path;
     bool    prediction  = false;
     int     num_scalar  = 100;
-
+    int     train_pair = 1;
     int i;
     if ((i = ArgPos((char *)"-algorithm",  argc, argv)) > 0)  algorithm   =  string(argv[i+1]);
     if ((i = ArgPos((char *)"-embed_dim",  argc, argv)) > 0)  embed_dim   =  atoi(argv[i+1]);
@@ -44,6 +48,7 @@ int main(int argc, char **argv) {
     if ((i = ArgPos((char *)"-dataset",    argc, argv)) > 0)  dataset     =  string(argv[i+1]);
     if ((i = ArgPos((char *)"-prediction", argc, argv)) > 0)  prediction  =  true;
     if ((i = ArgPos((char *)"-num_scalar", argc, argv)) > 0)  num_scalar  =  atoi(argv[i+1]);
+    if ((i = ArgPos((char *)"-train_pair", argc, argv)) > 0)  train_pair  =  atoi(argv[i+1]);
 
     printf("dataset     =  %s\n", dataset.c_str());
     printf("algorithm   =  %s\n", algorithm.c_str());
@@ -56,6 +61,7 @@ int main(int argc, char **argv) {
     printf("eval_freq   =  %d\n", eval_freq);
     printf("model_path  =  %s\n", model_path.c_str());
     printf("num_scalar  =  %d\n", num_scalar);
+    printf("train_pair  =  %d\n", train_pair);
 
     vector<string> ents = read_first_column(dataset + "-entities.txt");
     vector<string> rels = read_first_column(dataset + "-relations.txt");
@@ -83,7 +89,10 @@ int main(int argc, char **argv) {
     if (algorithm == "TransE")  model = new TransE(ne, nr, embed_dim, eta, gamma);
     if (algorithm == "ComplEx")  model = new ComplEx(ne, nr, embed_dim, eta, gamma);
     if (algorithm == "Analogy")  model = new Analogy(ne, nr, embed_dim, num_scalar, eta, gamma);
-
+    if (algorithm == "TransA")  model = new TransA(ne, nr, embed_dim, eta, gamma);
+    if (algorithm == "TransH")  model = new TransH(ne, nr, embed_dim, eta, gamma);
+    if (algorithm == "TransR")  model = new TransR(ne, nr, embed_dim, eta, gamma);
+    if (algorithm == "ManifoldE")  model = new ManifoldE(ne, nr, embed_dim, eta, gamma);
 
     assert(model != NULL);
 
@@ -152,8 +161,8 @@ int main(int argc, char **argv) {
 
             int tid = omp_get_thread_num();
 
-            // positive example
-            model->train(s, r, o, true);
+            if(!train_pair)
+                model->train(s, r, o, true);
 
             // negative examples
             for (int j = 0; j < neg_ratio; j++) {
@@ -163,9 +172,14 @@ int main(int argc, char **argv) {
 
                 // XXX: it is empirically beneficial to carry out updates even if oo == o || ss == s.
                 // This might be related to regularization.
-                model->train(s, r, oo, false);
-                model->train(ss, r, o, false);
-                model->train(s, rr, o, false);   // this improves MR slightly
+                if(!train_pair){
+                    model->train(s, r, oo, false);
+                    model->train(ss, r, o, false);
+                    model->train(s, rr, o, false);   // this improves MR slightly
+                } else{
+                    model->train(s, r, o, ss, r, o);
+                    model->train(s, r, o, s, r, oo);
+                }
             }
         }
         elapse_tr = omp_get_wtime() - start;

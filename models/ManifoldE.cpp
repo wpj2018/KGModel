@@ -13,7 +13,7 @@ public:
         E = uniform_matrix(ne, nh, -init_b, init_b);
         R = uniform_matrix(nr, nh, -init_b, init_b);
         A.resize(1);
-        A[0] = uniform_matrix(1, nr, 0, 0);
+        A[0] = uniform_matrix(1, nr, -init_b, init_b);
 
         E_g = const_matrix(ne, nh, init_e);
         R_g = const_matrix(nr, nh, init_e);
@@ -24,7 +24,8 @@ public:
     double score(int s, int r, int o) const {
         double dot = 0;
         for (int i = 0; i < nh; i++)
-            dot += E[s][i] * R[r][i] * E[o][i];
+            dot += fabs(E[s][i] + R[r][i] - E[o][i]);
+
         return -fabs(dot-A[0][0][r] * A[0][0][r]);
     }
 
@@ -39,15 +40,18 @@ public:
 
         double sum = 0;
         for (int i = 0; i < nh; i++)
-            sum += E[s][i] * R[r][i] * E[o][i];
+            sum += fabs(E[s][i] + R[r][i] - E[o][i]);
 
-        double loss = 2* (sum-A[0][0][r]*A[0][0][r]);
+        double loss = sum-A[0][0][r]*A[0][0][r];
         loss = loss > 0 ? 1 : -1;
 
         for (int i = 0; i < nh; i++) {
-            d_s[i] = loss * R[r][i] * E[o][i];
-            d_r[i] = loss * E[s][i] * E[o][i];
-            d_o[i] = loss * E[s][i] * R[r][i];
+            double x = 2*(E[s][i] + R[r][i] - E[o][i]);
+            x = x > 0 ? 1:-1;
+
+            d_s[i] = loss * x;
+            d_r[i] = loss * x;
+            d_o[i] = -loss * x;
         }
         d_a = -loss * 2 * A[0][0][r];
     }
