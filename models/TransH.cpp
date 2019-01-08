@@ -62,6 +62,7 @@ public:
             vector<double>& d_a) {
 
         double tmp1=0,tmp2=0;
+
         for (int i=0; i<nh; i++)
         {
             tmp1+=A[0][r][i]*E[s][i];
@@ -75,10 +76,16 @@ public:
             if(L1) {
                 x = x > 0 ? 1:-1;
             }
-            d_s[i] = x * (1-A[0][r][i]*E[s][i]);
+            d_s[i] += x;
+            d_o[i] -= x;
             d_r[i] = x;
-            d_o[i] = -x * (1-A[0][r][i]*E[o][i]);
-            d_a[i] = x * (tmp2-tmp1 + (E[o][i]-E[s][i])*A[0][r][i]);
+            d_a[i] += x* (tmp2 - tmp1);
+
+            for (int j = 0; j < nh; j++) {
+                d_s[j] -= x * A[0][r][j] * A[0][r][i];
+                d_o[j] += x * A[0][r][j] * A[0][r][i];
+                d_a[j] += x * (E[o][j] - E[s][j])* A[0][r][i];
+            }
         }
     }
 
@@ -127,7 +134,7 @@ public:
             {
                 sum+=A[0][r][i]*R[r][i];
             }
-            if (sum>0.1)
+            if (sum>0.01)
             {
                 for (int i=0; i<nh; i++)
                 {
