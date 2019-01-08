@@ -6,6 +6,7 @@
 #include"models/TransH.cpp"
 #include"models/TransR.cpp"
 #include"models/ManifoldE.cpp"
+#include"models/DMult.cpp"
 
 // based on Google's word2vec
 int ArgPos(char *str, int argc, char **argv) {
@@ -22,7 +23,7 @@ int ArgPos(char *str, int argc, char **argv) {
 
 int main(int argc, char **argv) {
     // option parser
-    string  dataset     =  "FB15k/freebase_mtr100_mte100";
+    string  dataset     =  "FB15k/";
     string  algorithm   =  "Analogy";
     int     embed_dim   =  200;
     double  eta         =  0.1;
@@ -63,8 +64,8 @@ int main(int argc, char **argv) {
     printf("num_scalar  =  %d\n", num_scalar);
     printf("train_pair  =  %d\n", train_pair);
 
-    vector<string> ents = read_first_column(dataset + "-entities.txt");
-    vector<string> rels = read_first_column(dataset + "-relations.txt");
+    vector<string> ents = read_first_column(dataset + "entities.txt");
+    vector<string> rels = read_first_column(dataset + "relations.txt");
 
     unordered_map<string, int> ent_map = create_id_mapping(ents);
     unordered_map<string, int> rel_map = create_id_mapping(rels);
@@ -72,9 +73,9 @@ int main(int argc, char **argv) {
     int ne = ent_map.size();
     int nr = rel_map.size();
 
-    vector<triplet> sros_tr = create_sros(dataset + "-train.txt", ent_map, rel_map);
-    vector<triplet> sros_va = create_sros(dataset + "-valid.txt", ent_map, rel_map);
-    vector<triplet> sros_te = create_sros(dataset + "-test.txt",  ent_map, rel_map);
+    vector<triplet> sros_tr = create_sros(dataset + "train.txt", ent_map, rel_map);
+    vector<triplet> sros_va = create_sros(dataset + "valid.txt", ent_map, rel_map);
+    vector<triplet> sros_te = create_sros(dataset + "test.txt",  ent_map, rel_map);
     vector<triplet> sros_al;
 
     sros_al.insert(sros_al.end(), sros_tr.begin(), sros_tr.end());
@@ -93,6 +94,7 @@ int main(int argc, char **argv) {
     if (algorithm == "TransH")  model = new TransH(ne, nr, embed_dim, eta, gamma);
     if (algorithm == "TransR")  model = new TransR(ne, nr, embed_dim, eta, gamma);
     if (algorithm == "ManifoldE")  model = new ManifoldE(ne, nr, embed_dim, eta, gamma);
+    if (algorithm == "DMult")  model = new DMult(ne, nr, embed_dim, eta, gamma);
 
     assert(model != NULL);
 
