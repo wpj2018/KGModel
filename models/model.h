@@ -202,6 +202,16 @@ void l2_normalize(vector<double>& vec) {
         vec[i] /= norm;
 }
 
+void l2_normalize(vector<double>& vec, int start, int end) {
+    double sq_norm = 0;
+    for (int i = start; i < end; i++)
+        sq_norm += vec[i] * vec[i];
+    double norm = sqrt(sq_norm);
+
+    for (int i = start; i < end; i++)
+        vec[i] /= norm;
+}
+
 void l2_normalize(vector<vector<double>>& vec) {
     int size0 = vec.size();
     int size1 = vec[0].size();
@@ -408,7 +418,7 @@ public:
         }
     }
 
-    void train(int s, int r, int o, bool is_positive) {
+    virtual void train(int s, int r, int o, bool is_positive) {
         vector<double> d_s;
         vector<double> d_r;
         vector<double> d_o;

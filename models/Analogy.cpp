@@ -12,6 +12,7 @@ class Analogy : public Model {
 
 public:
     Analogy(int ne, int nr, int nh, int num_scalar, double eta, double gamma) : Model(eta, gamma) {
+        this->nh = nh;
         this->nh1 = num_scalar;
         this->nh2 = nh - num_scalar;
         assert( this->nh2 % 2 == 0 );
